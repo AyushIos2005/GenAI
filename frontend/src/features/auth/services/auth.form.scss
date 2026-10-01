@@ -1,0 +1,66 @@
+/* ============================================================
+   Auth form styles (Login / Register only)
+   Relies on the design tokens and .btn/.access-card rules
+   defined globally in src/style.scss
+   ============================================================ */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.field input {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field input::placeholder {
+  color: #5f5a72;
+}
+
+.field input:focus {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px rgba(201, 162, 75, 0.18);
+}
+
+.alert {
+  margin: -6px 0 0;
+  font-size: 13px;
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.1);
+  border: 1px solid rgba(229, 72, 77, 0.35);
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+
+.switch-line {
+  margin: 22px 0 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.switch-line a {
+  color: var(--brass-soft);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.switch-line a:hover {
+  text-decoration: underline;
+}

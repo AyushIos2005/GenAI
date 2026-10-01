@@ -1,0 +1,32 @@
+const express = require("express");
+const authRouter = require("./Routes/auth.route");
+const interviewRouter = require("./Routes/interview.route");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const app = express();
+
+
+// middleware 
+app.use(cors({
+    origin : "http://localhost:5173",
+    credentials : true
+}))
+app.use(cookieParser());
+app.use(express.json());
+
+// api calls
+app.use("/api/auth",authRouter);
+app.use("/api/interview",interviewRouter);
+
+// global error handler — makes sure every crash still returns JSON
+// (without this, an uncaught error was returning Express's default HTML
+// page, which is why the frontend only ever saw "Request failed with
+// status code 500" with no real message).
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(err.status || 500).json({
+        message: err.message || "Internal server error"
+    });
+});
+
+module.exports = app;

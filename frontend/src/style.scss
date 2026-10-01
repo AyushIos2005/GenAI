@@ -1,0 +1,306 @@
+/* ============================================================
+   Design tokens
+   Subject: cookie/JWT session auth -> "access badge" metaphor
+   ============================================================ */
+:root {
+  --bg: #14121b;
+  --bg-grid: #1a1826;
+  --panel: #1f1c2c;
+  --panel-raised: #262238;
+  --ink: #f1ede4;
+  --ink-muted: #a49bb5;
+  --brass: #c9a24b;
+  --brass-soft: #e3c682;
+  --teal: #4fd1c5;
+  --danger: #e5484d;
+  --border: #35304a;
+
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius: 22px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 15% 10%, rgba(201, 162, 75, 0.08), transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(79, 209, 197, 0.07), transparent 45%),
+    repeating-linear-gradient(
+      0deg,
+      var(--bg-grid) 0px,
+      var(--bg-grid) 1px,
+      var(--bg) 1px,
+      var(--bg) 34px
+    ),
+    var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.muted {
+  color: var(--ink-muted);
+}
+
+/* ============================================================
+   Layout
+   ============================================================ */
+.screen-center {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  gap: 14px;
+}
+
+/* ============================================================
+   Signature element: the access card
+   ============================================================ */
+.access-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: linear-gradient(165deg, var(--panel-raised), var(--panel) 60%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px 34px 34px;
+  box-shadow:
+    0 30px 60px -25px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  animation: card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* the notch: a bite out of the top edge, like a keycard slot */
+.access-card__notch {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 84px;
+  height: 28px;
+  background: var(--bg);
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  border: 1px solid var(--border);
+  border-top: none;
+}
+
+/* punch holes down the left edge */
+.access-card__holes {
+  position: absolute;
+  top: 30px;
+  left: 14px;
+  bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.access-card__holes span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.access-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-left: 20px;
+  margin-bottom: 28px;
+}
+
+.access-card__eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-soft);
+}
+
+.access-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.25;
+  max-width: 26ch;
+}
+
+.access-card__body {
+  margin-left: 20px;
+}
+
+/* status LED */
+.led {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  margin-top: 8px;
+  flex-shrink: 0;
+  background: var(--ink-muted);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.03);
+}
+
+.led--idle {
+  background: var(--brass);
+  box-shadow: 0 0 10px 1px rgba(201, 162, 75, 0.6);
+}
+
+.led--pending {
+  background: var(--brass-soft);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.led--active {
+  background: var(--teal);
+  box-shadow: 0 0 12px 2px rgba(79, 209, 197, 0.65);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+
+.led--error {
+  background: var(--danger);
+  box-shadow: 0 0 10px 1px rgba(229, 72, 77, 0.6);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ============================================================
+   Buttons (shared across auth forms and the dashboard)
+   ============================================================ */
+.btn {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  color: #14121b;
+  background: linear-gradient(180deg, var(--brass-soft), var(--brass));
+  border: none;
+  border-radius: 10px;
+  padding: 13px 18px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+  box-shadow: 0 10px 22px -10px rgba(201, 162, 75, 0.55);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn--ghost {
+  margin-top: 26px;
+  width: 100%;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.btn--ghost:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn:focus-visible,
+.field input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Badge details (dashboard)
+   ============================================================ */
+.badge-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+}
+
+.badge-details > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.badge-details dt {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.badge-details dd {
+  margin: 0;
+  font-size: 15px;
+  text-align: right;
+  word-break: break-all;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .access-card,
+  .led--pending,
+  .led--active {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .access-card {
+    padding: 34px 22px 28px;
+  }
+
+  .access-card__header,
+  .access-card__body {
+    margin-left: 12px;
+  }
+}

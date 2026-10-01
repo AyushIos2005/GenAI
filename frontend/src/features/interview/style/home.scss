@@ -1,0 +1,37 @@
+.home{
+    width : 100%;
+    min-height: 100vh;
+
+    display : flex;
+    justify-content: center;
+    align-items: center;
+
+    .left {
+        background-color: red;
+        align-items: stretch;
+    }
+
+    .text-area{
+        height: 100%;
+        border:none;
+        outline:none;
+        padding-inline:1rem;
+        padding-block:0.75rem;
+        border-radius:0.5rem;
+
+        background-color : rgb(33, 32, 32);
+        color:whitesmoke;
+
+        font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+        
+    }
+
+    .right {
+        background-color: green;
+    }
+    
+
+
+
+
+}
