@@ -1,932 +1,712 @@
-# Frontend API Documentation
+# CareerPilot AI — Backend Documentation
 
-## 1. API Overview
+## 1. Overview
 
-**Base URL**
+The CareerPilot AI backend is a RESTful API service responsible for authentication, user management, resume/file processing, AI-powered career and interview analysis, and persistence of generated interview reports.
+
+The backend is implemented using Node.js and Express.js and follows a modular architecture separating routes, controllers, services, middleware, database configuration, and data models.
+
+The application uses MongoDB for persistent data storage and integrates Google Gemini for AI-powered analysis.
+
+---
+
+## 2. Purpose
+
+The backend provides the application layer between the CareerPilot AI frontend and its external services.
+
+Its primary responsibilities are:
+
+* User registration and authentication
+* Secure password storage
+* Authentication and protected API access
+* Session/token invalidation
+* File upload processing
+* AI-powered interview and career analysis
+* Interview report persistence
+* MongoDB database communication
+* Request processing and validation
+* Centralized application configuration
+
+---
+
+## 3. Backend Architecture
+
+The backend follows a modular layered architecture.
 
 ```text
-http://localhost:3000/api
+Client
+  │
+  ▼
+Express Application
+  │
+  ├── Routes
+  │
+  ▼
+Controllers
+  │
+  ├── Authentication
+  ├── Interview Processing
+  │
+  ▼
+Services
+  │
+  ├── AI Service
+  │
+  ▼
+External Services
+  │
+  ├── Google Gemini
+  │
+  ▼
+Database Layer
+  │
+  └── MongoDB / Mongoose
 ```
 
-### Authentication
+Authentication requests additionally pass through authentication middleware before protected controller operations are executed.
 
-Authentication uses a **JWT stored in an HTTP cookie** named:
+---
+
+## 4. Technology Stack
+
+| Technology     | Role                               |
+| -------------- | ---------------------------------- |
+| Node.js        | JavaScript runtime                 |
+| Express.js     | HTTP server and REST API framework |
+| MongoDB        | Persistent database                |
+| Mongoose       | MongoDB object modeling            |
+| JSON Web Token | Authentication                     |
+| bcrypt         | Password hashing                   |
+| Google Gemini  | Generative AI processing           |
+| Zod            | Schema/data validation             |
+| Multer         | File upload handling               |
+| dotenv         | Environment configuration          |
+
+---
+
+## 5. Directory Structure
 
 ```text
-token
-```
-
-The frontend must send cookies with every authenticated request.
-
-### Axios Configuration
-
-```javascript
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "http://localhost:3000/api",
-  withCredentials: true,
-});
-
-export default api;
-```
-
-For `fetch`:
-
-```javascript
-fetch("http://localhost:3000/api/auth/get-me", {
-  credentials: "include",
-});
-```
-
----
-
-# 2. Authentication APIs
-
-## 2.1 Register User
-
-### Endpoint
-
-```http
-POST /auth/register
-```
-
-### Access
-
-Public
-
-### Request Body
-
-```json
-{
-  "username": "Ayush",
-  "email": "ayush@example.com",
-  "password": "12345678"
-}
-```
-
-### Required Fields
-
-| Field    | Type   | Required |
-| -------- | ------ | -------- |
-| username | string | Yes      |
-| email    | string | Yes      |
-| password | string | Yes      |
-
-### Success Response
-
-**Status:** `201 Created`
-
-```json
-{
-  "message": "User registered successfully",
-  "user": {
-    "id": "USER_ID",
-    "username": "Ayush",
-    "email": "ayush@example.com"
-  }
-}
-```
-
-A JWT cookie named `token` is also created.
-
-### Error Response
-
-**Status:** `400 Bad Request`
-
-```json
-{
-  "message": "Please Provide username,email and password"
-}
-```
-
-or:
-
-```json
-{
-  "message": "Account Already exist with this email address or username"
-}
-```
-
----
-
-# 3. Login User
-
-## Endpoint
-
-```http
-POST /auth/login
-```
-
-### Access
-
-Public
-
-### Request Body
-
-```json
-{
-  "email": "ayush@example.com",
-  "password": "12345678"
-}
-```
-
-### Success Response
-
-**Status:** `200 OK`
-
-```json
-{
-  "message": "User LoggedIn Succefully",
-  "user": {
-    "id": "USER_ID",
-    "username": "Ayush",
-    "email": "ayush@example.com"
-  }
-}
-```
-
-The server creates the following cookie:
-
-```text
-token
-```
-
-### Invalid Credentials
-
-**Status:** `400 Bad Request`
-
-```json
-{
-  "message": "Invalid email or password"
-}
-```
-
-### Frontend Example
-
-```javascript
-const response = await api.post("/auth/login", {
-  email,
-  password,
-});
-
-console.log(response.data.user);
-```
-
-After successful login, the browser automatically stores the authentication cookie.
-
----
-
-# 4. Logout User
-
-## Endpoint
-
-```http
-GET /auth/logout
-```
-
-### Access
-
-Public
-
-### Request
-
-No body required.
-
-### Success Response
-
-**Status:** `200 OK`
-
-```json
-{
-  "message": "User logged Out successfully"
-}
-```
-
-The backend:
-
-1. Adds the current token to the blacklist.
-2. Clears the `token` cookie.
-
-### Frontend Example
-
-```javascript
-await api.get("/auth/logout");
-```
-
----
-
-# 5. Get Current User
-
-## Endpoint
-
-```http
-GET /auth/get-me
-```
-
-### Access
-
-Private
-
-### Authentication
-
-Requires the `token` cookie.
-
-### Request Body
-
-None.
-
-### Success Response
-
-**Status:** `200 OK`
-
-```json
-{
-  "message": "user detail fetched succesfully",
-  "user": {
-    "id": "USER_ID",
-    "username": "Ayush",
-    "email": "ayush@example.com"
-  }
-}
-```
-
-### Authentication Error
-
-**Status:** `401 Unauthorized`
-
-```json
-{
-  "message": "Token not provided"
-}
-```
-
-Other possible response:
-
-```json
-{
-  "message": "token is invalid"
-}
-```
-
-or:
-
-```json
-{
-  "message": "Invalid token."
-}
-```
-
-### Frontend Example
-
-```javascript
-const response = await api.get("/auth/get-me");
-
-const user = response.data.user;
-```
-
----
-
-# 6. Interview APIs
-
-All interview APIs require authentication.
-
-The frontend must send:
-
-```text
-Cookie: token=<JWT>
-```
-
-With Axios:
-
-```javascript
-withCredentials: true
-```
-
----
-
-# 7. Generate Interview Report
-
-## Endpoint
-
-```http
-POST /interview
-```
-
-### Access
-
-Private
-
-### Content-Type
-
-```text
-multipart/form-data
-```
-
-### Form Fields
-
-| Field           | Type   | Required | Description                  |
-| --------------- | ------ | -------- | ---------------------------- |
-| resume          | File   | Yes      | Candidate resume PDF         |
-| selfDescription | string | Yes      | Candidate's self-description |
-| jobDescription  | string | Yes      | Target job description       |
-
-### Resume Restrictions
-
-Maximum file size:
-
-```text
-3 MB
-```
-
-The backend extracts text from the uploaded PDF and sends it to Gemini AI.
-
-### Frontend Example
-
-```javascript
-const formData = new FormData();
-
-formData.append("resume", resumeFile);
-formData.append("selfDescription", selfDescription);
-formData.append("jobDescription", jobDescription);
-
-const response = await api.post("/interview", formData);
-```
-
-**Do not manually set `Content-Type`** when using `FormData` with Axios. Axios/browser will set the correct multipart boundary.
-
-### Success Response
-
-**Status:** `201 Created`
-
-```json
-{
-  "message": "Interview Report Genearate Succfesscully",
-  "interviewReport": {
-    "_id": "REPORT_ID",
-    "user": "USER_ID",
-    "resume": "Extracted resume text...",
-    "selfDescription": "I am a full stack developer...",
-    "jobDescription": "We are looking for...",
-    "matchScore": 82,
-    "technicalQuestions": [
-      {
-        "question": "Explain the difference between SQL and NoSQL databases.",
-        "intention": "Tests database fundamentals.",
-        "answer": "SQL databases are relational..."
-      }
-    ],
-    "behavioralQuestions": [
-      {
-        "question": "Tell me about a difficult project you worked on.",
-        "intention": "Evaluates problem-solving and communication.",
-        "answer": "Use the STAR method..."
-      }
-    ],
-    "skillGaps": [
-      {
-        "skill": "Docker",
-        "severity": "medium"
-      }
-    ],
-    "preparationPlan": [
-      {
-        "day": 1,
-        "focus": "JavaScript Fundamentals",
-        "tasks": [
-          "Revise closures",
-          "Revise promises",
-          "Practice async/await"
-        ]
-      }
-    ],
-    "createdAt": "2026-08-15T00:00:00.000Z",
-    "updatedAt": "2026-08-15T00:00:00.000Z"
-  }
-}
-```
-
-### Generated Report Structure
-
-The AI generates:
-
-* Match score
-* 10 technical questions
-* 5 behavioral questions
-* Skill gaps
-* 7-day preparation plan
-
----
-
-# 8. Get Interview Report by ID
-
-## Endpoint
-
-```http
-GET /interview/report/:interviewId
-```
-
-### Access
-
-Private
-
-### URL Example
-
-```text
-GET /interview/report/66c123456789abcdef123456
-```
-
-### Parameters
-
-| Parameter   | Type   | Required |
-| ----------- | ------ | -------- |
-| interviewId | string | Yes      |
-
-### Success Response
-
-**Status:** `200 OK`
-
-```json
-{
-  "message": "Interview report fetched successfully.",
-  "interviewReport": {
-    "_id": "REPORT_ID",
-    "user": "USER_ID",
-    "resume": "Resume text...",
-    "selfDescription": "Candidate description...",
-    "jobDescription": "Job description...",
-    "matchScore": 82,
-    "technicalQuestions": [],
-    "behavioralQuestions": [],
-    "skillGaps": [],
-    "preparationPlan": [],
-    "createdAt": "2026-08-15T00:00:00.000Z",
-    "updatedAt": "2026-08-15T00:00:00.000Z"
-  }
-}
-```
-
-### Report Not Found
-
-**Status:** `404 Not Found`
-
-```json
-{
-  "message": "Interview report not found"
-}
-```
-
-### Frontend Example
-
-```javascript
-const response = await api.get(`/interview/report/${reportId}`);
-
-const report = response.data.interviewReport;
-```
-
----
-
-# 9. Get All Interview Reports
-
-## Endpoint
-
-```http
-GET /interview/reports/interview
-```
-
-### Access
-
-Private
-
-### Request Body
-
-None.
-
-### Success Response
-
-**Status:** `200 OK`
-
-```json
-{
-  "message": "Interview reports fetched successfully.",
-  "interviewReports": [
-    {
-      "_id": "REPORT_ID_1",
-      "user": "USER_ID",
-      "resume": "Resume text...",
-      "selfDescription": "Candidate description...",
-      "jobDescription": "Job description...",
-      "matchScore": 82,
-      "technicalQuestions": [],
-      "behavioralQuestions": [],
-      "skillGaps": [],
-      "preparationPlan": [],
-      "createdAt": "2026-08-15T00:00:00.000Z",
-      "updatedAt": "2026-08-15T00:00:00.000Z"
-    }
-  ]
-}
-```
-
-### Frontend Example
-
-```javascript
-const response = await api.get("/interview/reports/interview");
-
-const reports = response.data.interviewReports;
-```
-
-This endpoint is useful for the frontend dashboard/history page.
-
----
-
-# 10. Generate Resume PDF
-
-## Endpoint
-
-```http
-POST /interview/resume/pdf/:interviewReportId
-```
-
-### Access
-
-Private
-
-### URL Example
-
-```text
-POST /interview/resume/pdf/REPORT_ID
-```
-
-### Parameters
-
-| Parameter         | Type   | Required |
-| ----------------- | ------ | -------- |
-| interviewReportId | string | Yes      |
-
-### Expected Response
-
-The endpoint is intended to return a PDF.
-
-### Response Headers
-
-```http
-Content-Type: application/pdf
-Content-Disposition: attachment; filename=resume_REPORT_ID.pdf
-```
-
-### Frontend Axios Example
-
-```javascript
-const response = await api.post(
-  `/interview/resume/pdf/${reportId}`,
-  {},
-  {
-    responseType: "blob",
-  }
-);
-
-const blob = new Blob([response.data], {
-  type: "application/pdf",
-});
-
-const url = window.URL.createObjectURL(blob);
-
-const link = document.createElement("a");
-link.href = url;
-link.download = `resume_${reportId}.pdf`;
-
-document.body.appendChild(link);
-link.click();
-
-link.remove();
-window.URL.revokeObjectURL(url);
-```
-
-### ⚠️ Current Backend Issue
-
-The current controller contains a bug in `generateResumePdfController`.
-
-It uses:
-
-```javascript
-const { resume, jobDescription, selfDescription } = interviewReport;
-```
-
-but `interviewReport` is not fetched/defined inside the controller.
-
-Therefore, this endpoint will currently fail before generating the PDF.
-
-The controller should first retrieve the report using `interviewReportId`, for example:
-
-```javascript
-const interviewReport =
-  await interviewReportModel.findOne({
-    _id: interviewReportId,
-    user: req.user.id,
-  });
-
-if (!interviewReport) {
-  return res.status(404).json({
-    message: "Interview report not found",
-  });
-}
-```
-
-Then:
-
-```javascript
-const {
-  resume,
-  jobDescription,
-  selfDescription,
-} = interviewReport;
-```
-
----
-
-# 11. Complete API Table
-
-| Method | Endpoint                                   | Auth    | Purpose                   |
-| ------ | ------------------------------------------ | ------- | ------------------------- |
-| POST   | `/auth/register`                           | Public  | Register user             |
-| POST   | `/auth/login`                              | Public  | Login user                |
-| GET    | `/auth/logout`                             | Public  | Logout user               |
-| GET    | `/auth/get-me`                             | Private | Get logged-in user        |
-| POST   | `/interview`                               | Private | Generate interview report |
-| GET    | `/interview/report/:interviewId`           | Private | Get one report            |
-| GET    | `/interview/reports/interview`             | Private | Get all reports           |
-| POST   | `/interview/resume/pdf/:interviewReportId` | Private | Generate resume PDF       |
-
----
-
-# 12. Recommended Frontend API Structure
-
-A clean React frontend can organize the APIs like this:
-
-```text
-src/
-├── api/
-│   ├── axios.js
-│   ├── auth.api.js
-│   └── interview.api.js
+backend/
 │
-├── pages/
-│   ├── Login.jsx
-│   ├── Register.jsx
-│   ├── Dashboard.jsx
-│   ├── GenerateInterview.jsx
-│   └── InterviewReport.jsx
+├── .agents/
+│   └── skills/
+│       └── gemini-interactions-api/
+│           ├── SKILL.md
+│           └── references/
+│               └── migration.md
 │
-└── components/
-    ├── MatchScore.jsx
-    ├── TechnicalQuestions.jsx
-    ├── BehavioralQuestions.jsx
-    ├── SkillGaps.jsx
-    └── PreparationPlan.jsx
-```
-
-### `axios.js`
-
-```javascript
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "http://localhost:3000/api",
-  withCredentials: true,
-});
-
-export default api;
-```
-
-### `auth.api.js`
-
-```javascript
-import api from "./axios";
-
-export const registerUser = (data) =>
-  api.post("/auth/register", data);
-
-export const loginUser = (data) =>
-  api.post("/auth/login", data);
-
-export const logoutUser = () =>
-  api.get("/auth/logout");
-
-export const getCurrentUser = () =>
-  api.get("/auth/get-me");
-```
-
-### `interview.api.js`
-
-```javascript
-import api from "./axios";
-
-export const generateInterviewReport = ({
-  resume,
-  selfDescription,
-  jobDescription,
-}) => {
-  const formData = new FormData();
-
-  formData.append("resume", resume);
-  formData.append("selfDescription", selfDescription);
-  formData.append("jobDescription", jobDescription);
-
-  return api.post("/interview", formData);
-};
-
-export const getInterviewReport = (interviewId) =>
-  api.get(`/interview/report/${interviewId}`);
-
-export const getAllInterviewReports = () =>
-  api.get("/interview/reports/interview");
-
-export const generateResumePdf = (interviewReportId) =>
-  api.post(
-    `/interview/resume/pdf/${interviewReportId}`,
-    {},
-    {
-      responseType: "blob",
-    }
-  );
+├── src/
+│   │
+│   ├── Routes/
+│   │   ├── auth.route.js
+│   │   └── interview.route.js
+│   │
+│   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   └── interview.controller.js
+│   │
+│   ├── db/
+│   │   └── db.js
+│   │
+│   ├── middlewares/
+│   │   ├── auth.middleware.js
+│   │   └── file.middleware.js
+│   │
+│   ├── models/
+│   │   ├── blacklist.model.js
+│   │   ├── interviewReport.model.js
+│   │   └── user.model.js
+│   │
+│   └── services/
+│       ├── ai.service.js
+│       └── temp.js
+│
+├── package.json
+├── package-lock.json
+├── server.js
+├── skills-lock.json
+└── readme.md
 ```
 
 ---
 
-# 13. Frontend Authentication Flow
+# 6. Application Entry Point
+
+The backend application is started through:
 
 ```text
-Register
-   ↓
-POST /auth/register
-   ↓
-JWT cookie created
-   ↓
-Dashboard
-   ↓
-GET /auth/get-me
-   ↓
-User authenticated
+server.js
 ```
 
-For login:
+The server initializes the Express application and starts listening on the configured port.
+
+The main Express application is organized in:
 
 ```text
-Login Form
-   ↓
-POST /auth/login
-   ↓
-JWT cookie created
-   ↓
-GET /auth/get-me
-   ↓
-Dashboard
+src/app.js
 ```
 
-For logout:
+This separation keeps server startup concerns separate from application configuration and routing.
+
+---
+
+# 7. Routing Layer
+
+Routes define the HTTP endpoints exposed by the backend.
+
+## Authentication Routes
 
 ```text
-Logout button
-   ↓
-GET /auth/logout
-   ↓
-Cookie cleared
-   ↓
-Redirect to Login
+src/Routes/auth.route.js
+```
+
+This module contains authentication-related endpoints such as registration, login, and logout operations.
+
+## Interview Routes
+
+```text
+src/Routes/interview.route.js
+```
+
+This module contains endpoints related to interview processing and AI-powered analysis.
+
+Protected operations use the authentication middleware before reaching their respective controllers.
+
+---
+
+# 8. Controller Layer
+
+Controllers contain request-handling logic and coordinate application operations.
+
+## Authentication Controller
+
+```text
+src/controllers/auth.controller.js
+```
+
+Responsible for authentication-related operations including:
+
+* User registration
+* User login
+* Authentication session handling
+* Logout/session invalidation
+
+## Interview Controller
+
+```text
+src/controllers/interview.controller.js
+```
+
+Responsible for interview-related processing and coordinating AI analysis and report generation.
+
+---
+
+# 9. Service Layer
+
+Business logic that interacts with external AI functionality is separated into services.
+
+## AI Service
+
+```text
+src/services/ai.service.js
+```
+
+The AI service is responsible for communicating with Google Gemini and processing AI-generated results used by the application.
+
+The general processing pipeline is:
+
+```text
+Request
+   │
+   ▼
+Interview Controller
+   │
+   ▼
+AI Service
+   │
+   ▼
+Google Gemini
+   │
+   ▼
+Structured AI Response
+   │
+   ▼
+Controller
+   │
+   ▼
+Database / Client
+```
+
+Separating AI communication from controllers makes the integration easier to maintain and replace independently.
+
+---
+
+# 10. Database Layer
+
+Database configuration is located at:
+
+```text
+src/db/db.js
+```
+
+The backend uses MongoDB with Mongoose for persistence.
+
+Mongoose models define the structure of application data and provide the interface used by controllers and services to interact with MongoDB.
+
+---
+
+# 11. Data Models
+
+## User Model
+
+```text
+src/models/user.model.js
+```
+
+The user model represents application users and authentication-related information.
+
+It is used during:
+
+* Registration
+* Login
+* Authentication
+* Protected request processing
+
+Passwords are handled using hashing rather than storing plaintext credentials.
+
+---
+
+## Interview Report Model
+
+```text
+src/models/interviewReport.model.js
+```
+
+The interview report model stores generated interview/career analysis results.
+
+Reports allow generated analysis to be persisted and accessed as part of the application's interview/report workflow.
+
+---
+
+## Blacklist Model
+
+```text
+src/models/blacklist.model.js
+```
+
+The blacklist model is used for invalidated authentication tokens.
+
+It supports logout/session invalidation by allowing previously issued tokens to be treated as invalid.
+
+---
+
+# 12. Authentication
+
+The application uses JSON Web Tokens for authentication.
+
+The authentication flow is:
+
+```text
+User
+ │
+ ├── Register
+ │      │
+ │      ▼
+ │   Password Hashing
+ │      │
+ │      ▼
+ │   User Stored in MongoDB
+ │
+ └── Login
+        │
+        ▼
+     Credentials Verified
+        │
+        ▼
+     JWT Generated
+        │
+        ▼
+     Authenticated Session
+```
+
+Protected requests are processed through:
+
+```text
+src/middlewares/auth.middleware.js
+```
+
+The middleware verifies the authentication token before allowing access to protected resources.
+
+---
+
+# 13. Authentication Middleware
+
+The authentication middleware is responsible for:
+
+1. Reading the authentication token.
+2. Verifying the token.
+3. Identifying the authenticated user.
+4. Loading the corresponding user information.
+5. Attaching authentication information to the request.
+6. Rejecting unauthorized requests.
+
+Conceptually:
+
+```text
+Incoming Request
+       │
+       ▼
+Authentication Middleware
+       │
+       ├── No Token ───────► Unauthorized
+       │
+       ├── Invalid Token ─► Unauthorized
+       │
+       └── Valid Token
+              │
+              ▼
+        Controller
 ```
 
 ---
 
-# 14. Interview Generation Flow
+# 14. File Processing
+
+File upload handling is separated into:
 
 ```text
-User uploads Resume PDF
-        ↓
-User enters Self Description
-        ↓
-User enters Job Description
-        ↓
-POST /api/interview
-        ↓
-Backend extracts PDF text
-        ↓
-Gemini AI analyzes candidate
-        ↓
-Interview Report saved in MongoDB
-        ↓
-Frontend receives report
-        ↓
-Display:
-   ├── Match Score
-   ├── Technical Questions
-   ├── Behavioral Questions
-   ├── Skill Gaps
-   └── 7-Day Preparation Plan
+src/middlewares/file.middleware.js
+```
+
+The middleware is responsible for handling uploaded files before they are processed by the relevant controller.
+
+This keeps file-processing concerns separate from authentication and business logic.
+
+---
+
+# 15. AI Processing
+
+CareerPilot AI uses Google Gemini as the generative AI layer.
+
+The backend sends relevant career/interview information to the AI service and processes the generated response.
+
+A simplified flow is:
+
+```text
+Resume / Interview Input
+          │
+          ▼
+      API Request
+          │
+          ▼
+Interview Controller
+          │
+          ▼
+       AI Service
+          │
+          ▼
+    Google Gemini
+          │
+          ▼
+   Generated Analysis
+          │
+          ▼
+ Interview Report
+          │
+          ▼
+       MongoDB
+```
+
+The project also contains Gemini-related interaction documentation under:
+
+```text
+backend/.agents/skills/gemini-interactions-api/
 ```
 
 ---
 
-# 15. Standard Frontend Error Handling
+# 16. Validation
 
-Recommended Axios handling:
+The project includes Zod as a validation dependency.
 
-```javascript
-try {
-  const response = await api.post("/auth/login", {
-    email,
-    password,
-  });
+Validation can be used to ensure that incoming data follows the expected structure before application logic processes it.
 
-  console.log(response.data);
-} catch (error) {
-  const message =
-    error.response?.data?.message ||
-    "Something went wrong";
-
-  console.error(message);
-}
-```
-
-For `401` responses:
-
-```javascript
-if (error.response?.status === 401) {
-  // Clear frontend user state
-  // Redirect to login
-}
-```
-
----
-
-# 16. Important Frontend Notes
-
-### 1. Always use credentials
-
-Because authentication uses cookies:
-
-```javascript
-withCredentials: true
-```
-
-### 2. Do not store the JWT in localStorage
-
-The backend already manages the JWT through the `token` cookie.
-
-### 3. Resume upload uses `multipart/form-data`
-
-Do not send the resume as JSON.
-
-Correct:
-
-```javascript
-const formData = new FormData();
-formData.append("resume", file);
-```
-
-### 4. Maximum resume size
+The intended flow is:
 
 ```text
-3 MB
+Client Request
+      │
+      ▼
+Validation
+      │
+      ├── Invalid ──► Error Response
+      │
+      ▼
+Controller
 ```
-
-### 5. PDF endpoint requires `responseType: "blob"`
-
-Otherwise Axios will not correctly handle the returned PDF.
-
-### 6. Reports belong to the logged-in user
-
-The backend checks:
-
-```javascript
-user: req.user.id
-```
-
-when retrieving reports, so a user cannot retrieve another user's interview report through the normal report APIs.
 
 ---
 
 # 17. Environment Configuration
 
-For local development:
+Sensitive and environment-specific configuration should be provided through environment variables.
+
+Create:
 
 ```text
-Frontend:
-http://localhost:5173
-
-Backend:
-http://localhost:3000
-
-API:
-http://localhost:3000/api
+backend/.env
 ```
 
-The backend currently allows CORS from:
+Example configuration:
+
+```env
+PORT=3000
+
+MONGO_URI=your_mongodb_connection_string
+
+JWT_SECRET=your_jwt_secret
+
+GEMINI_API_KEY=your_gemini_api_key
+
+CLIENT_URL=http://localhost:5173
+```
+
+The exact variable names should match those referenced by the backend configuration.
+
+### Security Requirement
+
+Environment files must not be committed to the repository.
+
+Never expose:
+
+* MongoDB credentials
+* JWT secrets
+* Gemini API keys
+* OAuth credentials
+* Other private application secrets
+
+---
+
+# 18. Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/AyushIos2005/GenAI.git
+```
+
+Navigate to the backend:
+
+```bash
+cd GenAI/backend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Configure environment variables:
 
 ```text
-http://localhost:5173
+backend/.env
 ```
 
-with credentials enabled.
+Start the backend using the configured npm scripts.
 
-For production deployment, the backend CORS origin must be changed to the actual frontend domain.
+For development, if a development script is configured:
+
+```bash
+npm run dev
+```
+
+Otherwise:
+
+```bash
+npm start
+```
+
+---
+
+# 19. API Development
+
+API testing can be performed using tools such as:
+
+* Postman
+* Thunder Client
+* Insomnia
+
+A typical API request flow is:
+
+```text
+Frontend
+   │
+   ▼
+HTTP Request
+   │
+   ▼
+Express Route
+   │
+   ▼
+Middleware
+   │
+   ▼
+Controller
+   │
+   ▼
+Service / Model
+   │
+   ▼
+HTTP Response
+```
+
+---
+
+# 20. Error Handling
+
+The backend should return appropriate HTTP status codes for different request outcomes.
+
+Common categories include:
+
+| Status | Meaning                         |
+| ------ | ------------------------------- |
+| 200    | Request processed successfully  |
+| 201    | Resource created                |
+| 400    | Invalid request/data            |
+| 401    | Authentication required/invalid |
+| 403    | Access denied                   |
+| 404    | Resource not found              |
+| 500    | Internal server error           |
+
+Client applications should handle these responses appropriately.
+
+---
+
+# 21. Security Considerations
+
+The backend includes security-related mechanisms such as:
+
+* Password hashing
+* JWT authentication
+* Protected routes
+* Token invalidation
+* Environment-based secrets
+* File upload middleware
+* Input validation
+
+Production deployments should additionally use:
+
+* HTTPS
+* Secure cookie configuration
+* Appropriate CORS configuration
+* API rate limiting
+* Request size limits
+* Strong production secrets
+* Logging and monitoring
+
+---
+
+# 22. Development Guidelines
+
+When extending the backend:
+
+1. Keep routes focused on endpoint definitions.
+2. Keep controllers focused on request/response handling.
+3. Keep reusable business logic in services.
+4. Keep database operations within model/data-access logic.
+5. Protect authenticated resources with middleware.
+6. Keep secrets outside source control.
+7. Validate external input before processing.
+8. Avoid placing large business logic directly inside route files.
+
+---
+
+# 23. Production Deployment
+
+The backend can be deployed to a Node.js-compatible hosting platform.
+
+A production deployment requires:
+
+1. Installing dependencies.
+2. Configuring environment variables.
+3. Configuring MongoDB connectivity.
+4. Configuring Gemini API credentials.
+5. Configuring frontend origin/CORS.
+6. Starting the Node.js server.
+7. Verifying API health and protected endpoints.
+
+The frontend must use the deployed backend URL when running in production.
+
+---
+
+# 24. Troubleshooting
+
+### MongoDB connection failure
+
+Verify:
+
+* MongoDB connection string
+* Database availability
+* Network access
+* Environment variable configuration
+
+### Authentication failure
+
+Verify:
+
+* JWT secret
+* Authentication token
+* Cookie configuration
+* Frontend/backend origin configuration
+
+### Gemini API failure
+
+Verify:
+
+* Gemini API key
+* API availability
+* Request payload
+* AI service configuration
+
+### File upload failure
+
+Verify:
+
+* Multipart request configuration
+* Uploaded file type
+* File middleware configuration
+* Request size limits
+
+---
+
+# 25. Future Development
+
+Possible future backend improvements include:
+
+* API rate limiting
+* Centralized error middleware
+* OpenAPI/Swagger documentation
+* Automated unit and integration tests
+* Structured logging
+* Request tracing
+* Background AI processing
+* Improved AI retry handling
+* API versioning
+* Production monitoring
+
+---
+
+# 26. Project Information
+
+**Project:** CareerPilot AI
+**Component:** Backend API
+**Developer:** Ayush Verma
+**Repository:** `AyushIos2005/GenAI`
+
+---
+
+## License
+
+Refer to the repository-level `LICENSE` file for licensing information.
