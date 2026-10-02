@@ -8,7 +8,7 @@ const app = express();
 
 // middleware 
 app.use(cors({
-    origin : "https://gen-ai-dusky-eta.vercel.app",
+    origin : "https://gen-a2ulfbyzo-vikki-s-projects-209c0941.vercel.app",
     credentials : true
 }))
 app.use(cookieParser());
