@@ -51,7 +51,12 @@ async function register_user(req,res){
     }
     )
 
-    res.cookie("token",token);
+    res.cookie("token",token,{
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 24 * 60 * 60 * 1000
+    });
 
     res.status(201).json({
         message : "User registered successfully",
@@ -96,7 +101,12 @@ async function loginUserController(req,res){
         expiresIn : "1d"
     })
 
-    res.cookie("token",token)
+    res.cookie("token",token,{
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 24 * 60 * 60 * 1000
+    })
     res.status(200).json({
         message : "User LoggedIn Succefully",
         user : {
@@ -117,7 +127,11 @@ async function logoutuserController(req,res){
         await tokenBlacklistModel.create({ token });
     }
 
-    res.clearCookie("token")
+    res.clearCookie("token",{
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+})
 
     res.status(200).json({
         message : "User logged Out successfully"
